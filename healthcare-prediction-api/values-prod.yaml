@@ -1,0 +1,71 @@
+# Values for production environment
+replicaCount: 5
+
+image:
+  repository: manish8757/demo-poc-gitops
+  pullPolicy: IfNotPresent
+  tag: "predictions-1.0.0"
+
+service:
+  type: LoadBalancer
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:region:account:certificate/certificate-id"
+
+ingress:
+  enabled: true
+  className: "alb"
+  annotations:
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:region:account:certificate/certificate-id"
+    alb.ingress.kubernetes.io/ssl-policy: "ELBSecurityPolicy-TLS-1-2-2017-01"
+  hosts:
+    - host: api.healthcare.production.com
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: healthcare-api-tls
+      hosts:
+        - api.healthcare.production.com
+
+autoscaling:
+  enabled: true
+  minReplicas: 3
+  maxReplicas: 20
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+resources:
+  limits:
+    cpu: 1000m
+    memory: 512Mi
+  requests:
+    cpu: 250m
+    memory: 256Mi
+
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 2
+
+env:
+  - name: ENVIRONMENT
+    value: "production"
+  - name: LOG_LEVEL
+    value: "INFO"
+  - name: WORKERS
+    value: "4"
+
+nodeSelector:
+  node-type: "api-servers"
+
+affinity:
+  podAntiAffinity:
+    preferredDuringSchedulingIgnoredDuringExecution:
+    - weight: 100
+      podAffinityTerm:
+        labelSelector:
+          matchExpressions:
+          - key: app.kubernetes.io/name
+            operator: In
+            values:
+            - healthcare-prediction-api
+        topologyKey: kubernetes.io/hostname
