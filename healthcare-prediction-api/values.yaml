@@ -6,7 +6,7 @@ namespace/monitoring created# Default values for healthcare-prediction-api
 replicaCount: 3
 
 image:
-  repository: manish8757/demo-poc-gitops
+  repository: manish8757/healthcare-prediction-api
   pullPolicy: Always
   tag: "predictions-latest"
 
